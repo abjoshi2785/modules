@@ -107,7 +107,7 @@ variable "user_data_replace_on_change" {
 variable "detailed_monitoring" {
   description = "Enable detailed CloudWatch monitoring."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "ebs_optimized" {
