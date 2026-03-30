@@ -1,0 +1,140 @@
+name: Modules CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: Discover modules
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.discover.outputs.modules }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Discover module directories
+        id: discover
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t modules < <(
+            for d in */ ; do
+              [ -d "$d" ] || continue
+
+              # skip non-module directories
+              if [[ "$d" == ".github/" ]]; then continue; fi
+
+              # detect terraform modules
+              if find "$d" -maxdepth 1 -name "*.tf" | grep -q .; then
+                basename "$d"
+              fi
+            done | sort
+          )
+
+          if [ "${#modules[@]}" -eq 0 ]; then
+            echo 'modules=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          json=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -s -c .)
+          echo "modules=${json}" >> "$GITHUB_OUTPUT"
+
+  validate:
+    name: Validate module - ${{ matrix.module }}
+    needs: discover
+    if: ${{ needs.discover.outputs.modules != '[]' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.8.8
+
+      - name: Set up Terraform (for TFLint)
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Set up TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Checkov
+        run: |
+          python -m pip install --upgrade pip
+          pip install checkov
+
+      # -------- FORMAT --------
+      - name: Check formatting
+        run: tofu fmt -check -recursive "${{ matrix.module }}"
+
+      # -------- MODULE VALIDATION --------
+      - name: Init module
+        working-directory: ${{ matrix.module }}
+        run: tofu init -backend=false
+
+      - name: Validate module
+        working-directory: ${{ matrix.module }}
+        run: tofu validate
+
+      # -------- TFLINT --------
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        working-directory: ${{ matrix.module }}
+        run: tflint
+
+      # -------- EXAMPLE VALIDATION --------
+      - name: Validate basic example
+        if: ${{ hashFiles(format('{0}/examples/basic/*.tf', matrix.module)) != '' }}
+        working-directory: ${{ matrix.module }}/examples/basic
+        run: |
+          tofu init -backend=false
+          tofu validate
+
+      # -------- SECURITY --------
+      - name: Run Checkov
+        run: checkov -d "${{ matrix.module }}" --quiet
+
+  repo-fmt:
+    name: Repo format check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.8.8
+
+      - name: Check repository formatting
+        run: tofu fmt -check -recursive .
