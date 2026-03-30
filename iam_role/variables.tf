@@ -73,7 +73,7 @@ variable "instance_profile_name" {
   default     = null
 
   validation {
-    condition     = var.instance_profile_name == null || length(trimspace(var.instance_profile_name)) > 0
+    condition     = var.instance_profile_name == null ? true : length(trimspace(var.instance_profile_name)) > 0
     error_message = "instance_profile_name must be null or a non-empty string."
   }
 }

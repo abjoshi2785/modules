@@ -15,10 +15,6 @@ resource "aws_efs_file_system" "this" {
     transition_to_ia = var.transition_to_ia
   }
 
-  timeouts {
-    delete = "20m"
-  }
-
   lifecycle {
     precondition {
       condition     = !(var.kms_key_arn != null && !var.encrypted)

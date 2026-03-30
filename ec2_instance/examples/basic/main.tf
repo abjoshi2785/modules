@@ -23,4 +23,9 @@ module "ec2_instance" {
     #!/bin/bash
     echo hello > /tmp/hello.txt
   EOT
+  tags = {
+    env         = "dev"
+    owner       = "platform-team"
+    cost-center = "shared-services"
+  }
 }
