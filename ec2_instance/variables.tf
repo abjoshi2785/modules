@@ -113,7 +113,7 @@ variable "detailed_monitoring" {
 variable "ebs_optimized" {
   description = "Enable EBS optimization when supported by the instance type."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "disable_api_termination" {
