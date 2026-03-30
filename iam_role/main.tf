@@ -3,8 +3,8 @@ locals {
 }
 
 resource "aws_iam_role" "this" {
-  name               = var.name
-  assume_role_policy = var.assume_role_policy_json
+  name                 = var.name
+  assume_role_policy   = var.assume_role_policy_json
   description          = var.description
   permissions_boundary = var.permissions_boundary
   tags                 = local.tags

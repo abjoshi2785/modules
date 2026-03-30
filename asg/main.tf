@@ -8,13 +8,13 @@ resource "aws_launch_template" "this" {
   instance_type = var.instance_type
   key_name      = var.key_name
 
-  vpc_security_group_ids      = var.security_group_ids
+  vpc_security_group_ids = var.security_group_ids
   placement {
     group_name = var.placement_group
   }
-  user_data                   = var.user_data == null ? null : base64encode(var.user_data)
-  update_default_version      = var.launch_template_update_default_version
-  ebs_optimized               = var.ebs_optimized
+  user_data              = var.user_data == null ? null : base64encode(var.user_data)
+  update_default_version = var.launch_template_update_default_version
+  ebs_optimized          = var.ebs_optimized
   monitoring {
     enabled = var.detailed_monitoring
   }

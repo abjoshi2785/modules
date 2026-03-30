@@ -17,9 +17,9 @@ resource "random_id" "tg_suffix" {
 }
 
 resource "aws_lb" "this" {
-  name                       = var.name
-  load_balancer_type         = "network"
-  internal                   = var.internal
+  name                             = var.name
+  load_balancer_type               = "network"
+  internal                         = var.internal
   subnets                          = var.subnet_ids
   enable_cross_zone_load_balancing = var.enable_cross_zone_load_balancing
   enable_deletion_protection       = var.deletion_protection
@@ -47,9 +47,9 @@ resource "aws_lb_target_group" "this" {
     precondition {
       condition = (
         contains(["TCP", "TLS"], var.listener_protocol) && contains(["TCP", "TLS", "HTTP", "HTTPS"], var.target_group_protocol)
-      ) || (
+        ) || (
         var.listener_protocol == "UDP" && contains(["UDP", "TCP_UDP"], var.target_group_protocol)
-      ) || (
+        ) || (
         var.listener_protocol == "TCP_UDP" && var.target_group_protocol == "TCP_UDP"
       )
       error_message = "Invalid listener_protocol and target_group_protocol combination for NLB."
