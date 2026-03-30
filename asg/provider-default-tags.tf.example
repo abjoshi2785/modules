@@ -1,0 +1,9 @@
+provider "aws" {
+  default_tags {
+    tags = {
+      env         = "dev"
+      owner       = "platform-team"
+      cost-center = "shared-services"
+    }
+  }
+}

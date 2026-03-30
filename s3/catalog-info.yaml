@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: opentofu-aws-s3
+  title: s3 OpenTofu Module
+  description: Reusable AWS OpenTofu module for s3
+  annotations:
+    github.com/project-slug: my-org/terraform-modules
+  tags:
+    - opentofu
+    - aws
+    - infrastructure
+spec:
+  type: infrastructure
+  lifecycle: production
+  owner: platform-engineering
+  system: opentofu-modules
