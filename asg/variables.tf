@@ -113,7 +113,7 @@ variable "imds_require_v2" {
 variable "imds_hop_limit" {
   description = "IMDS hop limit."
   type        = number
-  default     = 2
+  default     = 1
   validation {
     condition     = var.imds_hop_limit >= 1 && var.imds_hop_limit <= 64
     error_message = "imds_hop_limit must be between 1 and 64."
