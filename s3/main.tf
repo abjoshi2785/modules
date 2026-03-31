@@ -10,6 +10,7 @@ resource "aws_s3_bucket" "this" {
 
 resource "aws_s3_bucket_ownership_controls" "this" {
   bucket = aws_s3_bucket.this.id
+
   rule {
     object_ownership = var.object_ownership
   }
@@ -17,6 +18,7 @@ resource "aws_s3_bucket_ownership_controls" "this" {
 
 resource "aws_s3_bucket_versioning" "this" {
   bucket = aws_s3_bucket.this.id
+
   versioning_configuration {
     status = var.versioning_enabled ? "Enabled" : "Suspended"
   }
@@ -24,10 +26,18 @@ resource "aws_s3_bucket_versioning" "this" {
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
   bucket = aws_s3_bucket.this.id
+
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm     = var.kms_key_arn == null ? "AES256" : "aws:kms"
       kms_master_key_id = var.kms_key_arn
+    }
+  }
+
+  lifecycle {
+    precondition {
+      condition     = var.kms_key_arn == null || can(regex("^arn:[^:]+:kms:[^:]+:[0-9]{12}:(key|alias)/.+", var.kms_key_arn))
+      error_message = "kms_key_arn must be null or a valid KMS key or alias ARN."
     }
   }
 }
@@ -51,14 +61,23 @@ resource "aws_s3_bucket_logging" "this" {
   bucket        = aws_s3_bucket.this.id
   target_bucket = var.logging.target_bucket
   target_prefix = try(var.logging.target_prefix, null)
+
+  lifecycle {
+    precondition {
+      condition     = var.logging == null || length(trimspace(var.logging.target_bucket)) > 0
+      error_message = "logging.target_bucket must be a non-empty bucket name when logging is configured."
+    }
+  }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "this" {
-  count  = length(var.lifecycle_rules) == 0 ? 0 : 1
-  bucket = aws_s3_bucket.this.id
+  count      = length(var.lifecycle_rules) == 0 ? 0 : 1
+  bucket     = aws_s3_bucket.this.id
+  depends_on = [aws_s3_bucket_versioning.this]
 
   dynamic "rule" {
     for_each = var.lifecycle_rules
+
     content {
       id     = rule.value.id
       status = rule.value.status
@@ -69,6 +88,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
           try(rule.value.object_size_greater_than, null) == null &&
           try(rule.value.object_size_less_than, null) == null
         ) ? [] : [1]
+
         content {
           prefix                   = try(rule.value.prefix, null)
           object_size_greater_than = try(rule.value.object_size_greater_than, null)
@@ -78,6 +98,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
 
       dynamic "expiration" {
         for_each = try(rule.value.expiration_days, null) == null ? [] : [rule.value.expiration_days]
+
         content {
           days = expiration.value
         }
@@ -85,6 +106,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
 
       dynamic "abort_incomplete_multipart_upload" {
         for_each = try(rule.value.abort_incomplete_multipart_upload_days, null) == null ? [] : [rule.value.abort_incomplete_multipart_upload_days]
+
         content {
           days_after_initiation = abort_incomplete_multipart_upload.value
         }
@@ -92,6 +114,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
 
       dynamic "transition" {
         for_each = try(rule.value.transitions, [])
+
         content {
           days          = transition.value.days
           storage_class = transition.value.storage_class
@@ -100,6 +123,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
 
       dynamic "noncurrent_version_transition" {
         for_each = try(rule.value.noncurrent_transitions, [])
+
         content {
           noncurrent_days = noncurrent_version_transition.value.noncurrent_days
           storage_class   = noncurrent_version_transition.value.storage_class
@@ -108,6 +132,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
 
       dynamic "noncurrent_version_expiration" {
         for_each = try(rule.value.noncurrent_expiration_days, null) == null ? [] : [rule.value.noncurrent_expiration_days]
+
         content {
           noncurrent_days = noncurrent_version_expiration.value
         }

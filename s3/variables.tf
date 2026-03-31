@@ -79,7 +79,8 @@ variable "lifecycle_rules" {
 
   validation {
     condition = alltrue([
-      for rule in var.lifecycle_rules : length(trimspace(rule.id)) > 0 && contains(["Enabled", "Disabled"], rule.status)
+      for rule in var.lifecycle_rules :
+      length(trimspace(rule.id)) > 0 && contains(["Enabled", "Disabled"], rule.status)
     ])
     error_message = "Each lifecycle rule must have a non-empty id and status of Enabled or Disabled."
   }
@@ -100,16 +101,40 @@ variable "lifecycle_rules" {
   validation {
     condition = alltrue(flatten([
       for rule in var.lifecycle_rules : [
-        try(rule.expiration_days, null) == null || try(rule.expiration_days, null) > 0,
-        try(rule.noncurrent_expiration_days, null) == null || try(rule.noncurrent_expiration_days, null) > 0,
-        try(rule.abort_incomplete_multipart_upload_days, null) == null || try(rule.abort_incomplete_multipart_upload_days, null) > 0,
-        try(rule.object_size_greater_than, null) == null || try(rule.object_size_greater_than, null) >= 0,
-        try(rule.object_size_less_than, null) == null || try(rule.object_size_less_than, null) > 0,
-        alltrue([for t in try(rule.transitions, []) : t.days > 0 && contains(["STANDARD_IA", "ONEZONE_IA", "INTELLIGENT_TIERING", "GLACIER", "GLACIER_IR", "DEEP_ARCHIVE"], t.storage_class)]),
-        alltrue([for t in try(rule.noncurrent_transitions, []) : t.noncurrent_days > 0 && contains(["STANDARD_IA", "ONEZONE_IA", "INTELLIGENT_TIERING", "GLACIER", "GLACIER_IR", "DEEP_ARCHIVE"], t.storage_class)])
+        try(rule.expiration_days, null) == null ? true : try(rule.expiration_days > 0, false),
+        try(rule.noncurrent_expiration_days, null) == null ? true : try(rule.noncurrent_expiration_days > 0, false),
+        try(rule.abort_incomplete_multipart_upload_days, null) == null ? true : try(rule.abort_incomplete_multipart_upload_days > 0, false),
+        try(rule.object_size_greater_than, null) == null ? true : try(rule.object_size_greater_than >= 0, false),
+        try(rule.object_size_less_than, null) == null ? true : try(rule.object_size_less_than > 0, false),
+        alltrue([
+          for t in try(rule.transitions, []) :
+          t.days > 0 && contains(
+            ["STANDARD_IA", "ONEZONE_IA", "INTELLIGENT_TIERING", "GLACIER", "GLACIER_IR", "DEEP_ARCHIVE"],
+            t.storage_class
+          )
+        ]),
+        alltrue([
+          for t in try(rule.noncurrent_transitions, []) :
+          t.noncurrent_days > 0 && contains(
+            ["STANDARD_IA", "ONEZONE_IA", "INTELLIGENT_TIERING", "GLACIER", "GLACIER_IR", "DEEP_ARCHIVE"],
+            t.storage_class
+          )
+        ])
       ]
     ]))
-    error_message = "Lifecycle rule numeric values must be positive and storage classes must be valid S3 transition classes."
+    error_message = "Lifecycle rule numeric values must be valid and greater than zero where applicable, and storage classes must be valid S3 transition classes."
+  }
+
+  validation {
+    condition = alltrue([
+      for rule in var.lifecycle_rules :
+      (
+        try(rule.object_size_greater_than, null) == null ||
+        try(rule.object_size_less_than, null) == null ||
+        try(rule.object_size_less_than > rule.object_size_greater_than, false)
+      )
+    ])
+    error_message = "When both object_size_greater_than and object_size_less_than are set, object_size_less_than must be greater than object_size_greater_than."
   }
 }
 
@@ -117,4 +142,12 @@ variable "tags" {
   description = "Tags to apply."
   type        = map(string)
   default     = {}
+
+  validation {
+    condition = alltrue([
+      for k in ["env", "owner", "cost-center"] :
+      contains(keys(var.tags), k) && length(trimspace(var.tags[k])) > 0
+    ])
+    error_message = "tags must include non-empty env, owner, and cost-center."
+  }
 }

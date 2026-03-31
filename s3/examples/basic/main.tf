@@ -17,6 +17,12 @@ module "s3" {
 
   bucket_name = "replace-me-with-a-globally-unique-bucket-name"
 
+  tags = {
+    env         = "dev"
+    owner       = "platform-team"
+    cost-center = "shared-services"
+  }
+
   lifecycle_rules = [
     {
       id              = "expire-logs"
