@@ -113,6 +113,7 @@ jobs:
         run: |
           tofu init -backend=false
           tofu validate
+          tofu plan -input=false -lock=false
 
       - name: Run Checkov
         run: |
@@ -128,6 +129,101 @@ jobs:
           else
             checkov -d "${{ matrix.module }}" --quiet
           fi
+
+  docs:
+    name: Generate docs - ${{ matrix.module }}
+    needs: discover
+    if: ${{ needs.discover.outputs.modules != '[]' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate module README with terraform-docs
+        uses: terraform-docs/gh-actions@v1.4.1
+        with:
+          working-dir: ${{ matrix.module }}
+          config-file: .terraform-docs.yml
+          output-file: README.md
+          output-method: inject
+          git-push: "false"
+
+      - name: Upload module README artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: readme-${{ matrix.module }}
+          path: ${{ matrix.module }}/README.md
+
+  combined-readme:
+    name: Generate combined README
+    needs: [discover, docs]
+    if: ${{ needs.discover.outputs.modules != '[]' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download module README artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: module-readmes
+
+      - name: Build combined README
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          {
+            echo "# Terraform / OpenTofu AWS Modules"
+            echo
+            echo "This repository contains reusable, production-grade Terraform / OpenTofu modules."
+            echo
+            echo
+            echo "## Available Modules"
+            echo
+          } > README.generated.md
+
+          for d in module-readmes/readme-*; do
+            [ -d "$d" ] || continue
+            module="$(basename "$d" | sed 's/^readme-//')"
+            echo "- \`${module}\`" >> README.generated.md
+          done
+
+          {
+            echo
+            echo "---"
+            echo
+            echo "## Combined Module Documentation"
+            echo
+          } >> README.generated.md
+
+          for d in module-readmes/readme-*; do
+            [ -d "$d" ] || continue
+            module="$(basename "$d" | sed 's/^readme-//')"
+            file="$d/README.md"
+
+            {
+              echo "### ${module}"
+              echo
+              cat "$file"
+              echo
+              echo "---"
+              echo
+            } >> README.generated.md
+          done
+
+      - name: Upload combined README artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-readme
+          path: README.generated.md
 
   repo-fmt:
     name: Repo format check
