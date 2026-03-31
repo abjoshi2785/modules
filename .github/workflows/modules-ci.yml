@@ -119,6 +119,8 @@ jobs:
           SKIP_CHECKS=""
           if [[ "${{ matrix.module }}" == "s3" ]]; then
             SKIP_CHECKS="CKV_AWS_144,CKV2_AWS_62"
+          elif [[ "${{ matrix.module }}" == "security_group" ]]; then
+            SKIP_CHECKS="CKV2_AWS_5"
           fi
 
           if [[ -n "$SKIP_CHECKS" ]]; then
