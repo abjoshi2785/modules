@@ -74,12 +74,8 @@ variable "provisioned_throughput_in_mibps" {
   type        = number
   default     = null
   validation {
-    condition = (
-      var.throughput_mode == "provisioned"
-      ? try(var.provisioned_throughput_in_mibps > 0, false)
-      : var.provisioned_throughput_in_mibps == null
-    )
-    error_message = "When throughput_mode is provisioned, provisioned_throughput_in_mibps must be > 0. Otherwise it must be null."
+    condition     = var.provisioned_throughput_in_mibps == null ? true : try(var.provisioned_throughput_in_mibps > 0, false)
+    error_message = "provisioned_throughput_in_mibps must be null or greater than 0."
   }
 }
 

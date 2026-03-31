@@ -20,6 +20,15 @@ resource "aws_efs_file_system" "this" {
       condition     = !(var.kms_key_arn != null && !var.encrypted)
       error_message = "kms_key_arn can only be set when encrypted is true."
     }
+
+    precondition {
+      condition = (
+        var.throughput_mode == "provisioned"
+        ? var.provisioned_throughput_in_mibps != null && var.provisioned_throughput_in_mibps > 0
+        : var.provisioned_throughput_in_mibps == null
+      )
+      error_message = "When throughput_mode is provisioned, provisioned_throughput_in_mibps must be greater than 0. Otherwise it must be null."
+    }
   }
 }
 
