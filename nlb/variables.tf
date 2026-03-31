@@ -13,8 +13,9 @@ variable "internal" {
 }
 
 variable "deletion_protection" {
-  type    = bool
-  default = false
+  description = "Enable deletion protection on the NLB."
+  type        = bool
+  default     = true
 }
 
 variable "enable_cross_zone_load_balancing" {
@@ -141,6 +142,25 @@ variable "health_check" {
   validation {
     condition     = contains(["HTTP", "HTTPS"], var.health_check.protocol) || try(var.health_check.path, null) == null
     error_message = "health_check.path can only be set when health_check.protocol is HTTP or HTTPS."
+  }
+}
+
+variable "access_logs" {
+  description = "Optional access logs configuration for the NLB."
+  type = object({
+    enabled = optional(bool, true)
+    bucket  = string
+    prefix  = optional(string)
+  })
+  default = null
+
+  validation {
+    condition = (
+      var.access_logs == null
+      ? true
+      : length(trimspace(var.access_logs.bucket)) > 0
+    )
+    error_message = "access_logs.bucket must be a non-empty S3 bucket name when access_logs is configured."
   }
 }
 

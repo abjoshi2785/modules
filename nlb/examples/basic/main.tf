@@ -22,6 +22,11 @@ module "nlb" {
   target_port         = 8443
   target_type         = "instance"
   target_instance_ids = ["i-0123456789abcdef0"]
+  access_logs = {
+    enabled = true
+    bucket  = "replace-me-with-an-existing-log-bucket"
+    prefix  = "nlb/"
+  }
   tags = {
     env         = "dev"
     owner       = "platform-team"
