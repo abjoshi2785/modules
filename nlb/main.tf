@@ -57,9 +57,20 @@ resource "aws_lb_target_group" "this" {
 
     precondition {
       condition = (
-        contains(["HTTP", "HTTPS"], var.health_check.protocol) ? contains(["TCP", "TLS", "HTTP", "HTTPS"], var.target_group_protocol) : true
+        contains(["HTTP", "HTTPS"], var.health_check.protocol)
+        ? contains(["TCP", "TLS", "HTTP", "HTTPS"], var.target_group_protocol)
+        : true
       )
       error_message = "HTTP/HTTPS health checks require a compatible target_group_protocol."
+    }
+
+    precondition {
+      condition = (
+        contains(["UDP", "TCP_UDP"], var.listener_protocol)
+        ? !contains(["HTTP", "HTTPS"], var.health_check.protocol)
+        : true
+      )
+      error_message = "UDP or TCP_UDP listeners should not use HTTP/HTTPS health checks in this module."
     }
 
     precondition {
@@ -118,4 +129,3 @@ resource "aws_lb_target_group_attachment" "ip" {
   target_id        = each.value
   port             = var.target_port
 }
-

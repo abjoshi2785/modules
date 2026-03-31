@@ -103,7 +103,6 @@ variable "target_instance_ids" {
   description = "Only used when target_type == instance."
   type        = list(string)
   default     = []
-
 }
 
 variable "target_ip_addresses" {
@@ -143,13 +142,6 @@ variable "health_check" {
     condition     = contains(["HTTP", "HTTPS"], var.health_check.protocol) || try(var.health_check.path, null) == null
     error_message = "health_check.path can only be set when health_check.protocol is HTTP or HTTPS."
   }
-
-  validation {
-    condition = (
-      contains(["UDP", "TCP_UDP"], var.listener_protocol) ? !contains(["HTTP", "HTTPS"], var.health_check.protocol) : true
-    )
-    error_message = "UDP or TCP_UDP listeners should not use HTTP/HTTPS health checks in this module."
-  }
 }
 
 variable "tags" {
@@ -157,8 +149,9 @@ variable "tags" {
   default = {}
   validation {
     condition = alltrue([
-      for k in ["env", "owner", "cost-center"] : contains(keys(var.tags), k)
+      for k in ["env", "owner", "cost-center"] :
+      contains(keys(var.tags), k) && length(trimspace(var.tags[k])) > 0
     ])
-    error_message = "tags must include env, owner, and cost-center."
+    error_message = "tags must include non-empty env, owner, and cost-center."
   }
 }
