@@ -165,7 +165,7 @@ jobs:
           set -euo pipefail
           terraform-docs markdown table \
             --config .terraform-docs.yml \
-            --output-file "${{ matrix.module }}/README.md" \
+            --output-file README.md \
             --output-mode inject \
             "${{ matrix.module }}"
 
