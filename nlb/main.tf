@@ -2,6 +2,7 @@ locals {
   tags = merge(var.tags, { Name = var.name })
 }
 
+# https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id
 resource "random_id" "tg_suffix" {
   byte_length = 3
 
@@ -16,6 +17,7 @@ resource "random_id" "tg_suffix" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb
 resource "aws_lb" "this" {
   name                             = var.name
   load_balancer_type               = "network"
@@ -39,6 +41,7 @@ resource "aws_lb" "this" {
   tags = local.tags
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group
 resource "aws_lb_target_group" "this" {
   name = substr("${var.name}-tg-${random_id.tg_suffix.hex}", 0, 32)
 
@@ -103,6 +106,7 @@ resource "aws_lb_target_group" "this" {
   tags = local.tags
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener
 resource "aws_lb_listener" "this" {
   load_balancer_arn = aws_lb.this.arn
   port              = var.listener_port
@@ -122,6 +126,7 @@ resource "aws_lb_listener" "this" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group_attachment
 resource "aws_lb_target_group_attachment" "instance" {
   for_each         = var.target_type == "instance" ? toset(var.target_instance_ids) : toset([])
   target_group_arn = aws_lb_target_group.this.arn
@@ -129,6 +134,7 @@ resource "aws_lb_target_group_attachment" "instance" {
   port             = var.target_port
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group_attachment
 resource "aws_lb_target_group_attachment" "ip" {
   for_each         = var.target_type == "ip" ? toset(var.target_ip_addresses) : toset([])
   target_group_arn = aws_lb_target_group.this.arn

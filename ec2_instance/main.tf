@@ -2,6 +2,7 @@ locals {
   tags = merge(var.tags, { Name = var.name })
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance
 resource "aws_instance" "this" {
   ami                         = var.ami_id
   instance_type               = var.instance_type

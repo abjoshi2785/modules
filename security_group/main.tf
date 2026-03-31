@@ -4,6 +4,7 @@ locals {
 }
 
 # checkov:skip=CKV2_AWS_5: This reusable module creates a standalone security group. Attachments are performed by consuming modules/stacks.
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group
 resource "aws_security_group" "this" {
   name_prefix = "${local.name}-"
   description = var.description
@@ -15,6 +16,7 @@ resource "aws_security_group" "this" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule
 resource "aws_security_group_rule" "ingress" {
   for_each = var.ingress_rules
 
@@ -34,6 +36,7 @@ resource "aws_security_group_rule" "ingress" {
   description = try(each.value.description, null)
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule
 resource "aws_security_group_rule" "egress" {
   for_each = var.egress_rules
 

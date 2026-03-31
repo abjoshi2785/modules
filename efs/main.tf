@@ -2,6 +2,7 @@ locals {
   tags = merge(var.tags, { Name = var.name })
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/efs_file_system
 resource "aws_efs_file_system" "this" {
   creation_token                  = var.name
   encrypted                       = var.encrypted
@@ -32,6 +33,7 @@ resource "aws_efs_file_system" "this" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/efs_mount_target
 resource "aws_efs_mount_target" "this" {
   for_each = toset(var.subnet_ids)
 

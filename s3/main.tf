@@ -4,12 +4,14 @@ locals {
 
 # checkov:skip=CKV_AWS_144: Cross-region replication is workload-dependent and not enabled by default in this reusable module.
 # checkov:skip=CKV2_AWS_62: Event notifications are workload-dependent and not enabled by default in this reusable module.
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket
 resource "aws_s3_bucket" "this" {
   bucket        = var.bucket_name
   force_destroy = var.force_destroy
   tags          = local.tags
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_ownership_controls
 resource "aws_s3_bucket_ownership_controls" "this" {
   bucket = aws_s3_bucket.this.id
 
@@ -18,6 +20,7 @@ resource "aws_s3_bucket_ownership_controls" "this" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_versioning
 resource "aws_s3_bucket_versioning" "this" {
   bucket = aws_s3_bucket.this.id
 
@@ -26,6 +29,7 @@ resource "aws_s3_bucket_versioning" "this" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration
 resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
   bucket = aws_s3_bucket.this.id
 
@@ -44,6 +48,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block
 resource "aws_s3_bucket_public_access_block" "this" {
   bucket                  = aws_s3_bucket.this.id
   block_public_acls       = true
@@ -52,12 +57,14 @@ resource "aws_s3_bucket_public_access_block" "this" {
   restrict_public_buckets = true
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy
 resource "aws_s3_bucket_policy" "this" {
   count  = var.bucket_policy_json == null ? 0 : 1
   bucket = aws_s3_bucket.this.id
   policy = var.bucket_policy_json
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_logging
 resource "aws_s3_bucket_logging" "this" {
   count         = var.logging == null ? 0 : 1
   bucket        = aws_s3_bucket.this.id
@@ -72,6 +79,7 @@ resource "aws_s3_bucket_logging" "this" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration
 resource "aws_s3_bucket_lifecycle_configuration" "this" {
   count      = length(var.lifecycle_rules) == 0 ? 0 : 1
   bucket     = aws_s3_bucket.this.id

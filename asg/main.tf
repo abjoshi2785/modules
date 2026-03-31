@@ -2,6 +2,7 @@ locals {
   tags = merge(var.tags, { Name = var.name })
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/launch_template
 resource "aws_launch_template" "this" {
   name_prefix   = "${var.name}-"
   image_id      = var.ami_id
@@ -87,6 +88,7 @@ resource "aws_launch_template" "this" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/autoscaling_group
 resource "aws_autoscaling_group" "this" {
   name                      = var.name
   min_size                  = var.min_size
