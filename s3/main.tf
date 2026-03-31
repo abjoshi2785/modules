@@ -2,6 +2,8 @@ locals {
   tags = merge(var.tags, { Name = var.bucket_name })
 }
 
+# checkov:skip=CKV_AWS_144: Cross-region replication is workload-dependent and not enabled by default in this reusable module.
+# checkov:skip=CKV2_AWS_62: Event notifications are workload-dependent and not enabled by default in this reusable module.
 resource "aws_s3_bucket" "this" {
   bucket        = var.bucket_name
   force_destroy = var.force_destroy
