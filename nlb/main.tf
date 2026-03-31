@@ -24,13 +24,10 @@ resource "aws_lb" "this" {
   enable_cross_zone_load_balancing = var.enable_cross_zone_load_balancing
   enable_deletion_protection       = var.deletion_protection
 
-  dynamic "access_logs" {
-    for_each = var.access_logs == null ? [] : [var.access_logs]
-    content {
-      enabled = try(access_logs.value.enabled, true)
-      bucket  = access_logs.value.bucket
-      prefix  = try(access_logs.value.prefix, null)
-    }
+  access_logs {
+    enabled = var.access_logs.enabled
+    bucket  = var.access_logs.bucket
+    prefix  = try(var.access_logs.prefix, null)
   }
 
   timeouts {

@@ -146,21 +146,24 @@ variable "health_check" {
 }
 
 variable "access_logs" {
-  description = "Optional access logs configuration for the NLB."
+  description = "Access logs configuration for the NLB."
   type = object({
     enabled = optional(bool, true)
-    bucket  = string
+    bucket  = optional(string, "")
     prefix  = optional(string)
   })
-  default = null
+  default = {
+    enabled = true
+    bucket  = ""
+  }
 
   validation {
     condition = (
-      var.access_logs == null
-      ? true
-      : length(trimspace(var.access_logs.bucket)) > 0
+      var.access_logs.enabled
+      ? length(trimspace(var.access_logs.bucket)) > 0
+      : true
     )
-    error_message = "access_logs.bucket must be a non-empty S3 bucket name when access_logs is configured."
+    error_message = "access_logs.bucket must be a non-empty S3 bucket name when access_logs is enabled."
   }
 }
 
