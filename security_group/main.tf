@@ -3,6 +3,7 @@ locals {
   tags = merge(var.tags, { Name = local.name })
 }
 
+# checkov:skip=CKV2_AWS_5: This reusable module creates a standalone security group. Attachments are performed by consuming modules/stacks.
 resource "aws_security_group" "this" {
   name_prefix = "${local.name}-"
   description = var.description
