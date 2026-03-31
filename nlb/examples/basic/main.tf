@@ -22,4 +22,9 @@ module "nlb" {
   target_port         = 8443
   target_type         = "instance"
   target_instance_ids = ["i-0123456789abcdef0"]
+  tags = {
+    env         = "dev"
+    owner       = "platform-team"
+    cost-center = "shared-services"
+  }
 }
