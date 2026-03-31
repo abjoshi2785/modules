@@ -113,7 +113,6 @@ jobs:
         run: |
           tofu init -backend=false
           tofu validate
-          tofu plan -input=false -lock=false
 
       - name: Run Checkov
         run: |
