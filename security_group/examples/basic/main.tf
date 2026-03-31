@@ -27,4 +27,9 @@ module "security_group" {
       description = "Example HTTPS access"
     }
   }
+  tags = {
+    env         = "dev"
+    owner       = "platform-team"
+    cost-center = "shared-services"
+  }
 }

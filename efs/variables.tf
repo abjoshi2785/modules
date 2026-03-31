@@ -80,12 +80,14 @@ variable "provisioned_throughput_in_mibps" {
 }
 
 variable "tags" {
-  type    = map(string)
-  default = {}
+  description = "Tags to apply."
+  type        = map(string)
+  default     = {}
   validation {
     condition = alltrue([
-      for k in ["env", "owner", "cost-center"] : contains(keys(var.tags), k)
+      for k in ["env", "owner", "cost-center"] :
+      length(trimspace(lookup(var.tags, k, ""))) > 0
     ])
-    error_message = "tags must include env, owner, and cost-center."
+    error_message = "tags must include non-empty env, owner, and cost-center."
   }
 }

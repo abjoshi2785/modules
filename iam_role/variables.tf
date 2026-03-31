@@ -82,4 +82,11 @@ variable "tags" {
   description = "Tags to apply."
   type        = map(string)
   default     = {}
+  validation {
+    condition = alltrue([
+      for k in ["env", "owner", "cost-center"] :
+      length(trimspace(lookup(var.tags, k, ""))) > 0
+    ])
+    error_message = "tags must include non-empty env, owner, and cost-center."
+  }
 }

@@ -26,4 +26,9 @@ module "iam_role" {
       Action = "sts:AssumeRole"
     }]
   })
+  tags = {
+    env         = "dev"
+    owner       = "platform-team"
+    cost-center = "shared-services"
+  }
 }
