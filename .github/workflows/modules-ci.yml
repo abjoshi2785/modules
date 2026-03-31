@@ -232,8 +232,9 @@ jobs:
           for d in module-readmes/readme-*; do
             [ -d "$d" ] || continue
             module="$(basename "$d" | sed 's/^readme-//')"
-            # Extract description from first line after "## What this module does"
-            desc=$(sed -n '/^## What this module does/{n;s/^[[:space:]]*//;p;q;}' "$d/README.md")
+            # Extract full description between "## What this module does" and next "##"
+            desc=$(awk '/^## What this module does/{found=1; next} /^##/{exit} found && NF{print}' "$d/README.md" \
+              | sed 's/^- //' | paste -sd ', ' - | sed 's/^, //;s/, $//')
             index+="* \`${module}\` – ${desc}\n"
           done
 
