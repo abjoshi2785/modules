@@ -18,4 +18,9 @@ module "efs" {
   name               = "example-efs"
   subnet_ids         = ["subnet-0123456789abcdef0"]
   security_group_ids = ["sg-0123456789abcdef0"]
+  tags = {
+    env         = "dev"
+    owner       = "platform-team"
+    cost-center = "shared-services"
+  }
 }
