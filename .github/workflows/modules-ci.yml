@@ -214,61 +214,75 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download module README artifacts
         uses: actions/download-artifact@v4
         with:
           path: module-readmes
 
-      - name: Build combined README
+      - name: Inject combined docs into README.md
         shell: bash
         run: |
           set -euo pipefail
 
-          {
-            echo "# Terraform / OpenTofu AWS Modules"
-            echo
-            echo "This repository contains reusable, production-grade Terraform / OpenTofu modules."
-            echo
-            echo
-            echo "## Available Modules"
-            echo
-          } > README.generated.md
-
+          # Build module index
+          index=""
           for d in module-readmes/readme-*; do
             [ -d "$d" ] || continue
             module="$(basename "$d" | sed 's/^readme-//')"
-            echo "- \`${module}\`" >> README.generated.md
+            # Extract description from first line after "## What this module does"
+            desc=$(sed -n '/^## What this module does/{n;s/^[[:space:]]*//;p;q;}' "$d/README.md")
+            index+="* \`${module}\` – ${desc}\n"
           done
 
-          {
-            echo
-            echo "---"
-            echo
-            echo "## Combined Module Documentation"
-            echo
-          } >> README.generated.md
+          # Inject module index between markers
+          awk -v content="$index" '
+            /<!-- BEGIN_MODULE_INDEX -->/ { print; printf "%s", content; skip=1; next }
+            /<!-- END_MODULE_INDEX -->/   { skip=0 }
+            skip { next }
+            { print }
+          ' README.md > README.md.tmp
+          mv README.md.tmp README.md
 
+          # Build combined module docs
+          combined=""
           for d in module-readmes/readme-*; do
             [ -d "$d" ] || continue
             module="$(basename "$d" | sed 's/^readme-//')"
             file="$d/README.md"
-
-            {
-              echo "### ${module}"
-              echo
-              cat "$file"
-              echo
-              echo "---"
-              echo
-            } >> README.generated.md
+            combined+="### ${module}\n\n"
+            combined+="$(cat "$file")\n\n---\n\n"
           done
 
-      - name: Upload combined README artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: combined-readme
-          path: README.generated.md
+          # Inject combined docs between markers
+          awk -v content="$combined" '
+            /<!-- BEGIN_COMBINED_MODULE_DOCS -->/ { print; printf "%s", content; skip=1; next }
+            /<!-- END_COMBINED_MODULE_DOCS -->/   { skip=0 }
+            skip { next }
+            { print }
+          ' README.md > README.md.tmp
+          mv README.md.tmp README.md
+
+      - name: Commit and push combined README
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          if git diff --cached --quiet; then
+            echo "No combined README changes"
+            exit 0
+          fi
+          git commit -m "docs(terraform): update combined module documentation"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && break
+            echo "Push attempt $i failed, retrying..."
+            sleep $(( i * 2 ))
+          done
 
   repo-fmt:
     name: Repo format check
