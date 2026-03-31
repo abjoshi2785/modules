@@ -8,7 +8,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   discover:
@@ -144,15 +144,45 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Generate module README with terraform-docs
-        uses: terraform-docs/gh-actions@v1.4.1
         with:
-          working-dir: ${{ matrix.module }}
-          config-file: ../.terraform-docs.yml
-          output-file: README.md
-          output-method: inject
-          git-push: "true"
+          fetch-depth: 0
+
+      - name: Install terraform-docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="0.17.0"
+          curl -sSLo terraform-docs.tar.gz \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/v${VERSION}/terraform-docs-v${VERSION}-linux-amd64.tar.gz"
+          tar -xzf terraform-docs.tar.gz terraform-docs
+          chmod +x terraform-docs
+          sudo mv terraform-docs /usr/local/bin/terraform-docs
+          terraform-docs --version
+
+      - name: Generate module README
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform-docs markdown table \
+            --config .terraform-docs.yml \
+            --output-file "${{ matrix.module }}/README.md" \
+            --output-mode inject \
+            "${{ matrix.module }}"
+
+      - name: Commit and push README changes
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${{ matrix.module }}/README.md"
+          if git diff --cached --quiet; then
+            echo "No README changes for ${{ matrix.module }}"
+            exit 0
+          fi
+          git commit -m "docs(terraform): update README for ${{ matrix.module }}"
+          git push
 
       - name: Upload module README artifact
         uses: actions/upload-artifact@v4
