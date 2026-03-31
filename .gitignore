@@ -1,0 +1,108 @@
+# =========================
+
+# OpenTofu / Terraform
+
+# =========================
+
+# Local .terraform directory
+
+.terraform/
+
+# OpenTofu state files
+
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+
+crash.log
+crash.*.log
+
+# Sensitive variable files
+
+*.tfvars
+*.tfvars.json
+
+# Override files
+
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+
+.terraformrc
+terraform.rc
+
+# OpenTofu lock file (KEEP if using version pinning)
+
+# Comment this if you want to commit lock file
+
+# .terraform.lock.hcl
+
+# OpenTofu specific
+
+.tofu/
+.tofu.lock.hcl
+
+# Plan output files
+
+*.tfplan
+
+# Debug logs
+
+*.log
+
+# =========================
+
+# Editor / OS Files
+
+# =========================
+
+# macOS
+
+.DS_Store
+
+# Windows
+
+Thumbs.db
+Desktop.ini
+
+# VSCode
+
+.vscode/
+
+# IntelliJ / JetBrains
+
+.idea/
+
+# =========================
+
+# CI/CD / Misc
+
+# =========================
+
+# Temporary files
+
+*.tmp
+*.temp
+
+# Backup files
+
+*.bak
+*.backup
+
+# =========================
+
+# Optional (Uncomment if needed)
+
+# =========================
+
+# Ignore modules if vendored locally
+
+# modules/
+
+# Ignore generated files
+
+# generated/
