@@ -29,7 +29,7 @@ Tag format example: `nlb/v0.3.0`
 Consumer pinning example:
 ```hcl
 module "nlb" {
-  source = "git::ssh://git@github.com/my-org/terraform-modules.git//terraform/modules/nlb?ref=nlb/v0.4.0"
+  source = "git::ssh://git@github.com/my-org/terraform-modules.git//nlb?ref=nlb/v0.4.0"
 }
 ```
 
@@ -38,4 +38,6 @@ module "nlb" {
 - `tofu validate`
 
 ## Inputs / Outputs
-See `variables.tf` and `outputs.tf`.
+
+<!-- BEGIN_TF_DOCS -->
+<!-- END_TF_DOCS -->

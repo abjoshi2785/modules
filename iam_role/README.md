@@ -19,7 +19,7 @@ Tag format example: `iam_role/v0.3.0`
 Consumer pinning example:
 ```hcl
 module "iam_role" {
-  source = "git::ssh://git@github.com/my-org/terraform-modules.git//terraform/modules/iam_role?ref=iam_role/v0.4.0"
+  source = "git::ssh://git@github.com/my-org/terraform-modules.git//iam_role?ref=iam_role/v0.4.0"
 }
 ```
 
@@ -28,4 +28,6 @@ module "iam_role" {
 - `tofu validate`
 
 ## Inputs / Outputs
-See `variables.tf` and `outputs.tf`.
+
+<!-- BEGIN_TF_DOCS -->
+<!-- END_TF_DOCS -->

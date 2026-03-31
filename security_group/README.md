@@ -19,7 +19,7 @@ Tag format example: `security_group/v0.3.0`
 Consumer pinning example:
 ```hcl
 module "security_group" {
-  source = "git::ssh://git@github.com/my-org/terraform-modules.git//terraform/modules/security_group?ref=security_group/v0.4.0"
+  source = "git::ssh://git@github.com/my-org/terraform-modules.git//security_group?ref=security_group/v0.4.0"
 }
 ```
 
@@ -28,4 +28,6 @@ module "security_group" {
 - `tofu validate`
 
 ## Inputs / Outputs
-See `variables.tf` and `outputs.tf`.
+
+<!-- BEGIN_TF_DOCS -->
+<!-- END_TF_DOCS -->

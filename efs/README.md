@@ -18,7 +18,7 @@ Tag format example: `efs/v0.3.0`
 Consumer pinning example:
 ```hcl
 module "efs" {
-  source = "git::ssh://git@github.com/my-org/terraform-modules.git//terraform/modules/efs?ref=efs/v0.4.0"
+  source = "git::ssh://git@github.com/my-org/terraform-modules.git//efs?ref=efs/v0.4.0"
 }
 ```
 
@@ -27,4 +27,6 @@ module "efs" {
 - `tofu validate`
 
 ## Inputs / Outputs
-See `variables.tf` and `outputs.tf`.
+
+<!-- BEGIN_TF_DOCS -->
+<!-- END_TF_DOCS -->

@@ -17,7 +17,7 @@ Tag format example: `ec2_instance/v0.3.0`
 Consumer pinning example:
 ```hcl
 module "ec2_instance" {
-  source = "git::ssh://git@github.com/my-org/terraform-modules.git//terraform/modules/ec2_instance?ref=ec2_instance/v0.4.0"
+  source = "git::ssh://git@github.com/my-org/terraform-modules.git//ec2_instance?ref=ec2_instance/v0.4.0"
 }
 ```
 
@@ -26,4 +26,6 @@ module "ec2_instance" {
 - `tofu validate`
 
 ## Inputs / Outputs
-See `variables.tf` and `outputs.tf`.
+
+<!-- BEGIN_TF_DOCS -->
+<!-- END_TF_DOCS -->

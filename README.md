@@ -20,6 +20,7 @@ The modules in this repository are built with the following principles:
 
 ## Available Modules
 
+<!-- BEGIN_MODULE_INDEX -->
 * `s3` – S3 bucket with lifecycle configuration and security defaults
 * `iam_role` – IAM role with optional permissions boundary support
 * `security_group` – Security group with structured ingress/egress rules
@@ -27,27 +28,28 @@ The modules in this repository are built with the following principles:
 * `efs` – EFS file system with mount targets
 * `asg` – Auto Scaling Group with launch template support
 * `nlb` – Network Load Balancer with listener and target group configuration
+<!-- END_MODULE_INDEX -->
 
 Each module includes:
 
 * `main.tf`
 * `variables.tf`
 * `outputs.tf`
+* `versions.tf`
 * `examples/basic`
 
 ---
 
 ## Repository Structure
 
-```id="struct1"
-modules/
-  s3/
-  iam_role/
-  security_group/
-  ec2_instance/
-  efs/
-  asg/
-  nlb/
+```
+s3/
+iam_role/
+security_group/
+ec2_instance/
+efs/
+asg/
+nlb/
 ```
 
 ---
@@ -58,7 +60,7 @@ modules/
 
 All modules require a standard set of tags:
 
-```id="tags1"
+```hcl
 tags = {
   env         = "dev"
   owner       = "team-name"
@@ -91,7 +93,7 @@ This prevents invalid configurations from reaching `apply`.
 
 IAM roles support optional permissions boundaries:
 
-```id="iam1"
+```hcl
 permissions_boundary = "arn:aws:iam::123456789012:policy/example-boundary"
 ```
 
@@ -136,9 +138,9 @@ The NLB module includes:
 
 Example using the EC2 module:
 
-```id="ex1"
+```hcl
 module "ec2_instance" {
-  source = "git::https://github.com/<org>/<repo>.git//modules/ec2_instance"
+  source = "git::https://github.com/<org>/<repo>.git//ec2_instance"
 
   name               = "example-ec2"
   ami_id             = "ami-0123456789abcdef0"
@@ -200,6 +202,13 @@ Potential enhancements include:
 * stricter IAM guardrail enforcement
 * expanded S3 lifecycle capabilities
 * observability integrations
+
+---
+
+## Generated Module Documentation
+
+<!-- BEGIN_COMBINED_MODULE_DOCS -->
+<!-- END_COMBINED_MODULE_DOCS -->
 
 ---
 
