@@ -132,15 +132,10 @@ jobs:
           fi
 
   docs:
-    name: Generate docs - ${{ matrix.module }}
+    name: Generate module docs
     needs: [discover, validate]
     if: ${{ needs.discover.outputs.modules != '[]' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        module: ${{ fromJson(needs.discover.outputs.modules) }}
 
     steps:
       - name: Checkout
@@ -148,14 +143,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate terraform docs
-        uses: terraform-docs/gh-actions@v1.4.1
-        with:
-          working-dir: ${{ matrix.module }}
-          config-file: ../.terraform-docs.yml
-          output-file: README.md
-          output-method: inject
-          git-push: "true"
+      - name: Generate terraform docs for all modules
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          modules='${{ needs.discover.outputs.modules }}'
+
+          for module in $(echo "$modules" | jq -r '.[]'); do
+            echo "Generating docs for $module"
+
+            docker run --rm \
+              -v "$PWD:/terraform-docs" \
+              -w /terraform-docs \
+              quay.io/terraform-docs/terraform-docs:0.17.0 \
+              markdown table \
+              --config ".terraform-docs.yml" \
+              --output-file "${module}/README.md" \
+              --output-mode inject \
+              "${module}"
+          done
+
+      - name: Commit and push module README changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add */README.md
+
+          if git diff --cached --quiet; then
+            echo "No module README changes"
+            exit 0
+          fi
+
+          git commit -m "docs(terraform): update module READMEs"
+          git pull --rebase origin main
+          git push
 
   root-readme:
     name: Generate root README
@@ -169,20 +195,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build root README
+      - name: Update module index in root README
         shell: bash
         run: |
           set -euo pipefail
 
-          {
-            echo "# Terraform Modules"
-            echo
-            echo "Reusable OpenTofu/Terraform modules maintained in this repository."
-            echo
-            echo "## Available Modules"
-            echo
-          } > README.md
-
+          index=""
           for d in */ ; do
             [ -d "$d" ] || continue
 
@@ -192,9 +210,27 @@ jobs:
 
             if find "$d" -maxdepth 1 -name "*.tf" | grep -q .; then
               module="$(basename "$d")"
-              echo "- [${module}](./${module})" >> README.md
+              index="${index}- [${module}](./${module})"$'\n'
             fi
           done
+
+          awk -v content="$index" '
+            /<!-- BEGIN_MODULE_INDEX -->/ {
+              print
+              printf "%s", content
+              skip=1
+              next
+            }
+            /<!-- END_MODULE_INDEX -->/ {
+              skip=0
+              print
+              next
+            }
+            skip { next }
+            { print }
+          ' README.md > README.md.tmp
+
+          mv README.md.tmp README.md
 
       - name: Commit root README changes
         shell: bash
