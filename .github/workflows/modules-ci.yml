@@ -131,7 +131,7 @@ jobs:
 
   docs:
     name: Generate docs - ${{ matrix.module }}
-    needs: discover
+    needs: [discover, validate]
     if: ${{ needs.discover.outputs.modules != '[]' }}
     runs-on: ubuntu-latest
 
