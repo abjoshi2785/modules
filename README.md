@@ -21,6 +21,13 @@ The modules in this repository are built with the following principles:
 ## Available Modules
 
 <!-- BEGIN_MODULE_INDEX -->
+* `asg` – Creates:,Launch Template Auto Scaling Group,Production behaviors: IMDSv2 required by default,Encrypted root volume by default Instance refresh enabled by default so AMI/user_data changes roll instances,Preconditions enforce valid size relationships Consistent plain-text user_data input, encoded internally for the launch template
+* `ec2_instance` – Creates a single EC2 instance with secure defaults:,IMDSv2 required by default Encrypted root volume by default (gp3, 30GiB),Consistent plain-text user_data input Optional detailed monitoring, EBS optimization, termination protection, and extra EBS volumes,Optional instance profile
+* `efs` – Creates an EFS file system and one mount target per subnet.,Also supports optional performance mode and throughput mode controls. Includes cost-control default:,Lifecycle policy transitions data to EFS Infrequent Access (IA) (default: AFTER_30_DAYS)
+* `iam_role` – Creates an IAM Role with:,Inline policies (map of JSON policy documents) Optional managed policy attachments,Optional permissions boundary Optional instance profile (default: disabled for safer shared reuse)
+* `nlb` – Creates a Network Load Balancer (NLB) with:,Configurable listener and target group protocol One listener,One target group Optional target attachments for `instance` or `ip`,Optional health check overrides Production behaviors:,Target group name includes a random suffix to avoid name collisions on replacement `random_id` uses keepers so name changes when replacement-relevant inputs change,Target group uses `create_before_destroy` Cross-input validations reduce invalid combinations
+* `s3` – Creates an S3 bucket with production defaults:,Encryption (SSE-S3 or SSE-KMS) Public access block,Ownership controls (default: BucketOwnerEnforced) Optional bucket policy,Optional server access logging Optional lifecycle rules with transitions, multipart cleanup, and stronger validation
+* `security_group` – Creates an AWS Security Group and a set of ingress/egress rules.,Designed for shared use across teams: Uses `name_prefix` + `create_before_destroy` to avoid name-collision failures during replacement.,Rules are maps keyed by stable names, so diffs are reviewable and rule reordering doesn't cause churn. Includes rule-level validations to reduce invalid combinations.
 <!-- END_MODULE_INDEX -->
 
 Each module contains its own detailed documentation, including inputs, outputs, and examples.
