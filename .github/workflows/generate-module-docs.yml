@@ -1,0 +1,80 @@
+name: Generate Module Docs
+
+on:
+  workflow_call:
+    inputs:
+      module:
+        required: true
+        type: string
+
+jobs:
+  docs:
+    name: Generate docs - ${{ inputs.module }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install terraform-docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="0.17.0"
+          curl -sSLo terraform-docs.tar.gz \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/v${VERSION}/terraform-docs-v${VERSION}-linux-amd64.tar.gz"
+          tar -xzf terraform-docs.tar.gz terraform-docs
+          chmod +x terraform-docs
+          sudo mv terraform-docs /usr/local/bin/terraform-docs
+          terraform-docs --version
+
+      - name: Generate module README
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform-docs markdown table \
+            --config .terraform-docs.yml \
+            --output-file README.md \
+            --output-mode inject \
+            "${{ inputs.module }}"
+
+      - name: Commit and push README changes
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${{ inputs.module }}/README.md"
+
+          if git diff --cached --quiet; then
+            echo "No README changes for ${{ inputs.module }}"
+            exit 0
+          fi
+
+          git commit -m "docs(terraform): update README for ${{ inputs.module }}"
+
+          success=false
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push; then
+              success=true
+              break
+            fi
+            echo "Push attempt $i failed, retrying..."
+            sleep $(( i * 2 ))
+          done
+
+          if [[ "$success" != "true" ]]; then
+            echo "Failed to push README changes after multiple attempts."
+            exit 1
+          fi
+
+      - name: Upload module README artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: readme-${{ inputs.module }}
+          path: ${{ inputs.module }}/README.md
