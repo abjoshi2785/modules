@@ -5,7 +5,7 @@ on:
 
 jobs:
   combined-readme:
-    name: Generate combined README
+    name: Generate module index in README
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,7 +22,7 @@ jobs:
           pattern: readme-*
           path: module-readmes
 
-      - name: Inject combined docs into README.md
+      - name: Inject module index into README.md
         shell: bash
         run: |
           set -euo pipefail
@@ -32,12 +32,11 @@ jobs:
             exit 1
           fi
 
-          grep -q '<!-- BEGIN_MODULE_INDEX -->' README.md
-          grep -q '<!-- END_MODULE_INDEX -->' README.md
-          grep -q '<!-- BEGIN_COMBINED_MODULE_DOCS -->' README.md
-          grep -q '<!-- END_COMBINED_MODULE_DOCS -->' README.md
+          grep -q '<!-- BEGIN_MODULE_INDEX -->' README.md || { echo "Missing BEGIN_MODULE_INDEX"; exit 1; }
+          grep -q '<!-- END_MODULE_INDEX -->' README.md || { echo "Missing END_MODULE_INDEX"; exit 1; }
 
           index=""
+
           for d in module-readmes/readme-*; do
             [ -d "$d" ] || continue
             module="$(basename "$d" | sed 's/^readme-//')"
@@ -58,27 +57,10 @@ jobs:
             skip { next }
             { print }
           ' README.md > README.md.tmp
+
           mv README.md.tmp README.md
 
-          combined=""
-          for d in module-readmes/readme-*; do
-            [ -d "$d" ] || continue
-            module="$(basename "$d" | sed 's/^readme-//')"
-            file="$d/README.md"
-
-            combined+="### ${module}\n\n"
-            combined+="$(cat "$file")\n\n---\n\n"
-          done
-
-          awk -v content="$combined" '
-            /<!-- BEGIN_COMBINED_MODULE_DOCS -->/ { print; printf "%s", content; skip=1; next }
-            /<!-- END_COMBINED_MODULE_DOCS -->/   { skip=0; print; next }
-            skip { next }
-            { print }
-          ' README.md > README.md.tmp
-          mv README.md.tmp README.md
-
-      - name: Commit and push combined README
+      - name: Commit and push README changes
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         shell: bash
         run: |
@@ -90,11 +72,11 @@ jobs:
           git add README.md
 
           if git diff --cached --quiet; then
-            echo "No combined README changes"
+            echo "No README changes"
             exit 0
           fi
 
-          git commit -m "docs(terraform): update combined module documentation"
+          git commit -m "docs(terraform): update module index"
 
           success=false
           for i in 1 2 3 4 5; do
@@ -107,6 +89,6 @@ jobs:
           done
 
           if [[ "$success" != "true" ]]; then
-            echo "Failed to push combined README changes after multiple attempts."
+            echo "Failed to push README changes after multiple attempts."
             exit 1
           fi
