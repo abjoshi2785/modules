@@ -1,0 +1,112 @@
+name: Generate Combined README
+
+on:
+  workflow_call:
+
+jobs:
+  combined-readme:
+    name: Generate combined README
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download module README artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: readme-*
+          path: module-readmes
+
+      - name: Inject combined docs into README.md
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f README.md ]]; then
+            echo "README.md not found at repository root"
+            exit 1
+          fi
+
+          grep -q '<!-- BEGIN_MODULE_INDEX -->' README.md
+          grep -q '<!-- END_MODULE_INDEX -->' README.md
+          grep -q '<!-- BEGIN_COMBINED_MODULE_DOCS -->' README.md
+          grep -q '<!-- END_COMBINED_MODULE_DOCS -->' README.md
+
+          index=""
+          for d in module-readmes/readme-*; do
+            [ -d "$d" ] || continue
+            module="$(basename "$d" | sed 's/^readme-//')"
+
+            desc=$(awk '/^## What this module does/{found=1; next} /^##/{exit} found && NF{print}' "$d/README.md" \
+              | sed 's/^- //' | paste -sd ', ' - | sed 's/^, //;s/, $//')
+
+            if [[ -z "$desc" ]]; then
+              desc="Module documentation"
+            fi
+
+            index+="* \`${module}\` – ${desc}\n"
+          done
+
+          awk -v content="$index" '
+            /<!-- BEGIN_MODULE_INDEX -->/ { print; printf "%s", content; skip=1; next }
+            /<!-- END_MODULE_INDEX -->/   { skip=0; print; next }
+            skip { next }
+            { print }
+          ' README.md > README.md.tmp
+          mv README.md.tmp README.md
+
+          combined=""
+          for d in module-readmes/readme-*; do
+            [ -d "$d" ] || continue
+            module="$(basename "$d" | sed 's/^readme-//')"
+            file="$d/README.md"
+
+            combined+="### ${module}\n\n"
+            combined+="$(cat "$file")\n\n---\n\n"
+          done
+
+          awk -v content="$combined" '
+            /<!-- BEGIN_COMBINED_MODULE_DOCS -->/ { print; printf "%s", content; skip=1; next }
+            /<!-- END_COMBINED_MODULE_DOCS -->/   { skip=0; print; next }
+            skip { next }
+            { print }
+          ' README.md > README.md.tmp
+          mv README.md.tmp README.md
+
+      - name: Commit and push combined README
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+
+          if git diff --cached --quiet; then
+            echo "No combined README changes"
+            exit 0
+          fi
+
+          git commit -m "docs(terraform): update combined module documentation"
+
+          success=false
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push; then
+              success=true
+              break
+            fi
+            echo "Push attempt $i failed, retrying..."
+            sleep $(( i * 2 ))
+          done
+
+          if [[ "$success" != "true" ]]; then
+            echo "Failed to push combined README changes after multiple attempts."
+            exit 1
+          fi

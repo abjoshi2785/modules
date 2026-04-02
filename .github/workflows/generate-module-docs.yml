@@ -20,14 +20,27 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install terraform-docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="0.17.0"
+          curl -sSLo terraform-docs.tar.gz \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/v${VERSION}/terraform-docs-v${VERSION}-linux-amd64.tar.gz"
+          tar -xzf terraform-docs.tar.gz terraform-docs
+          chmod +x terraform-docs
+          sudo mv terraform-docs /usr/local/bin/terraform-docs
+          terraform-docs --version
+
       - name: Generate module README
-        uses: terraform-docs/gh-actions@v1.4.1
-        with:
-          working-dir: ${{ inputs.module }}
-          config-file: .terraform-docs.yml
-          output-file: README.md
-          output-method: inject
-          git-push: false
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform-docs markdown table \
+            --config .terraform-docs.yml \
+            --output-file README.md \
+            --output-mode inject \
+            "${{ inputs.module }}"
 
       - name: Commit and push README changes
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
