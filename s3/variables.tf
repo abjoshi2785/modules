@@ -115,6 +115,11 @@ variable "lifecycle_rules" {
   }
 
   validation {
+    condition     = length(distinct([for rule in var.lifecycle_rules : rule.id])) == length(var.lifecycle_rules)
+    error_message = "Each lifecycle rule id must be unique."
+  }
+
+  validation {
     condition = alltrue([
       for rule in var.lifecycle_rules : (
         rule.expiration_days != null ||

@@ -27,13 +27,13 @@ resource "aws_security_group_rule" "ingress" {
   to_port   = each.value.to_port
   protocol  = each.value.protocol
 
-  cidr_blocks              = try(each.value.cidr_blocks, null)
-  ipv6_cidr_blocks         = try(each.value.ipv6_cidr_blocks, null)
-  prefix_list_ids          = try(each.value.prefix_list_ids, null)
-  source_security_group_id = try(each.value.source_security_group_id, null)
-  self                     = try(each.value.self, null)
+  cidr_blocks              = each.value.cidr_blocks
+  ipv6_cidr_blocks         = each.value.ipv6_cidr_blocks
+  prefix_list_ids          = each.value.prefix_list_ids
+  source_security_group_id = each.value.source_security_group_id
+  self                     = each.value.self
 
-  description = try(each.value.description, null)
+  description = each.value.description
 }
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule
@@ -47,11 +47,11 @@ resource "aws_security_group_rule" "egress" {
   to_port   = each.value.to_port
   protocol  = each.value.protocol
 
-  cidr_blocks              = try(each.value.cidr_blocks, null)
-  ipv6_cidr_blocks         = try(each.value.ipv6_cidr_blocks, null)
-  prefix_list_ids          = try(each.value.prefix_list_ids, null)
-  source_security_group_id = try(each.value.source_security_group_id, null)
-  self                     = try(each.value.self, null)
+  cidr_blocks              = each.value.cidr_blocks
+  ipv6_cidr_blocks         = each.value.ipv6_cidr_blocks
+  prefix_list_ids          = each.value.prefix_list_ids
+  source_security_group_id = each.value.source_security_group_id
+  self                     = each.value.self
 
-  description = try(each.value.description, null)
+  description = each.value.description
 }

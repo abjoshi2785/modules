@@ -52,7 +52,7 @@ resource "aws_efs_access_point" "this" {
     content {
       uid            = posix_user.value.uid
       gid            = posix_user.value.gid
-      secondary_gids = try(posix_user.value.secondary_gids, null)
+      secondary_gids = posix_user.value.secondary_gids
     }
   }
 

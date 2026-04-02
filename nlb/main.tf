@@ -26,10 +26,13 @@ resource "aws_lb" "this" {
   enable_cross_zone_load_balancing = var.enable_cross_zone_load_balancing
   enable_deletion_protection       = var.deletion_protection
 
-  access_logs {
-    enabled = var.access_logs.enabled
-    bucket  = var.access_logs.bucket
-    prefix  = try(var.access_logs.prefix, null)
+  dynamic "access_logs" {
+    for_each = var.access_logs.enabled ? [1] : []
+    content {
+      enabled = true
+      bucket  = var.access_logs.bucket
+      prefix  = var.access_logs.prefix
+    }
   }
 
   timeouts {
@@ -89,6 +92,14 @@ resource "aws_lb_target_group" "this" {
       )
       error_message = "Provide exactly one non-empty target list matching target_type."
     }
+
+    precondition {
+      condition = (
+        var.health_check.timeout == null ||
+        var.health_check.timeout < var.health_check.interval
+      )
+      error_message = "health_check.timeout must be less than health_check.interval."
+    }
   }
 
   health_check {
@@ -115,8 +126,12 @@ resource "aws_lb_listener" "this" {
 
   lifecycle {
     precondition {
-      condition     = var.listener_protocol != "TLS" || var.certificate_arn != null
-      error_message = "certificate_arn must be set when listener_protocol is TLS."
+      condition = (
+        var.listener_protocol == "TLS" && var.certificate_arn != null
+      ) || (
+        var.listener_protocol != "TLS" && var.certificate_arn == null
+      )
+      error_message = "certificate_arn must be set when listener_protocol is TLS, and must not be set otherwise."
     }
   }
 

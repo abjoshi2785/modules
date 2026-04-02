@@ -10,8 +10,11 @@ resource "aws_launch_template" "this" {
   key_name      = var.key_name
 
   vpc_security_group_ids = var.security_group_ids
-  placement {
-    group_name = var.placement_group
+  dynamic "placement" {
+    for_each = var.placement_group == null ? [] : [1]
+    content {
+      group_name = var.placement_group
+    }
   }
   user_data              = var.user_data == null ? null : base64encode(var.user_data)
   update_default_version = var.launch_template_update_default_version
@@ -52,13 +55,13 @@ resource "aws_launch_template" "this" {
     content {
       device_name = block_device_mappings.value.device_name
       ebs {
-        delete_on_termination = try(block_device_mappings.value.delete_on_termination, true)
-        encrypted             = try(block_device_mappings.value.encrypted, true)
-        kms_key_id            = try(block_device_mappings.value.kms_key_id, null)
+        delete_on_termination = block_device_mappings.value.delete_on_termination
+        encrypted             = block_device_mappings.value.encrypted
+        kms_key_id            = block_device_mappings.value.kms_key_id
         volume_size           = block_device_mappings.value.volume_size
-        volume_type           = try(block_device_mappings.value.volume_type, "gp3")
-        iops                  = try(block_device_mappings.value.iops, null)
-        throughput            = try(block_device_mappings.value.throughput, null)
+        volume_type           = block_device_mappings.value.volume_type
+        iops                  = block_device_mappings.value.iops
+        throughput            = block_device_mappings.value.throughput
       }
     }
   }
@@ -84,6 +87,11 @@ resource "aws_launch_template" "this" {
     precondition {
       condition     = !(var.root_kms_key_id != null && !var.root_volume_encrypted)
       error_message = "root_kms_key_id can only be set when root_volume_encrypted is true."
+    }
+
+    precondition {
+      condition     = var.capacity_reservation_target_id == null || var.capacity_reservation_preference == "none"
+      error_message = "capacity_reservation_target_id can only be set when capacity_reservation_preference is none."
     }
   }
 }
@@ -122,7 +130,6 @@ resource "aws_autoscaling_group" "this" {
       condition     = length(var.subnet_ids) > 0
       error_message = "subnet_ids must contain at least one subnet."
     }
-
     precondition {
       condition     = var.min_size >= 0 && var.max_size >= var.min_size
       error_message = "max_size must be greater than or equal to min_size, and min_size must be >= 0."
@@ -131,6 +138,11 @@ resource "aws_autoscaling_group" "this" {
     precondition {
       condition     = var.desired_capacity >= var.min_size && var.desired_capacity <= var.max_size
       error_message = "desired_capacity must be between min_size and max_size."
+    }
+
+    precondition {
+      condition     = var.health_check_type != "ELB" || length(var.target_group_arns) > 0
+      error_message = "target_group_arns must be provided when health_check_type is ELB."
     }
   }
 

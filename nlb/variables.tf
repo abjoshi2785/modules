@@ -1,8 +1,8 @@
 variable "name" {
   type = string
   validation {
-    condition     = length(trimspace(var.name)) > 0 && length(var.name) <= 32
-    error_message = "name must be non-empty and no longer than 32 characters for safe NLB naming."
+    condition     = length(trimspace(var.name)) > 0 && length(var.name) <= 22
+    error_message = "name must be non-empty and no longer than 22 characters (target group appends -tg- plus 6 hex chars to stay within AWS 32-char limit)."
   }
 }
 
@@ -153,7 +153,7 @@ variable "access_logs" {
     prefix  = optional(string)
   })
   default = {
-    enabled = true
+    enabled = false
     bucket  = ""
   }
 
@@ -175,6 +175,21 @@ variable "timeouts" {
     delete = optional(string, "20m")
   })
   default = {}
+
+  validation {
+    condition     = can(regex("^[0-9]+[mhs]$", var.timeouts.create))
+    error_message = "timeouts.create must be a duration string like 20m, 1h, or 300s."
+  }
+
+  validation {
+    condition     = can(regex("^[0-9]+[mhs]$", var.timeouts.update))
+    error_message = "timeouts.update must be a duration string like 20m, 1h, or 300s."
+  }
+
+  validation {
+    condition     = can(regex("^[0-9]+[mhs]$", var.timeouts.delete))
+    error_message = "timeouts.delete must be a duration string like 20m, 1h, or 300s."
+  }
 }
 
 variable "tags" {

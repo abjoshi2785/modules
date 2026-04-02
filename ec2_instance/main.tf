@@ -9,7 +9,6 @@ resource "aws_instance" "this" {
   subnet_id                   = var.subnet_id
   vpc_security_group_ids      = var.security_group_ids
   associate_public_ip_address = var.associate_public_ip
-  availability_zone           = var.availability_zone
   placement_group             = var.placement_group
   tenancy                     = var.tenancy
   key_name                    = var.key_name
@@ -48,13 +47,13 @@ resource "aws_instance" "this" {
     for_each = var.additional_ebs_volumes
     content {
       device_name           = ebs_block_device.value.device_name
-      delete_on_termination = try(ebs_block_device.value.delete_on_termination, true)
-      encrypted             = try(ebs_block_device.value.encrypted, true)
-      kms_key_id            = try(ebs_block_device.value.kms_key_id, null)
+      delete_on_termination = ebs_block_device.value.delete_on_termination
+      encrypted             = ebs_block_device.value.encrypted
+      kms_key_id            = ebs_block_device.value.kms_key_id
       volume_size           = ebs_block_device.value.volume_size
-      volume_type           = try(ebs_block_device.value.volume_type, "gp3")
-      iops                  = try(ebs_block_device.value.iops, null)
-      throughput            = try(ebs_block_device.value.throughput, null)
+      volume_type           = ebs_block_device.value.volume_type
+      iops                  = ebs_block_device.value.iops
+      throughput            = ebs_block_device.value.throughput
     }
   }
 
@@ -62,6 +61,11 @@ resource "aws_instance" "this" {
     precondition {
       condition     = !(var.root_kms_key_id != null && !var.root_volume_encrypted)
       error_message = "root_kms_key_id can only be set when root_volume_encrypted is true."
+    }
+
+    precondition {
+      condition     = var.capacity_reservation_target_id == null || var.capacity_reservation_preference == "none"
+      error_message = "capacity_reservation_target_id can only be set when capacity_reservation_preference is none."
     }
   }
 

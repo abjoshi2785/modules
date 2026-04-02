@@ -39,7 +39,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
       kms_master_key_id = var.kms_key_arn
     }
   }
-
 }
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block
@@ -63,7 +62,7 @@ resource "aws_s3_bucket_logging" "this" {
   count         = var.logging == null ? 0 : 1
   bucket        = aws_s3_bucket.this.id
   target_bucket = var.logging.target_bucket
-  target_prefix = try(var.logging.target_prefix, null)
+  target_prefix = var.logging.target_prefix
 }
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration
@@ -81,20 +80,20 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
 
       dynamic "filter" {
         for_each = (
-          try(rule.value.prefix, null) == null &&
-          try(rule.value.object_size_greater_than, null) == null &&
-          try(rule.value.object_size_less_than, null) == null
+          rule.value.prefix == null &&
+          rule.value.object_size_greater_than == null &&
+          rule.value.object_size_less_than == null
         ) ? [] : [1]
 
         content {
-          prefix                   = try(rule.value.prefix, null)
-          object_size_greater_than = try(rule.value.object_size_greater_than, null)
-          object_size_less_than    = try(rule.value.object_size_less_than, null)
+          prefix                   = rule.value.prefix
+          object_size_greater_than = rule.value.object_size_greater_than
+          object_size_less_than    = rule.value.object_size_less_than
         }
       }
 
       dynamic "expiration" {
-        for_each = try(rule.value.expiration_days, null) == null ? [] : [rule.value.expiration_days]
+        for_each = rule.value.expiration_days == null ? [] : [rule.value.expiration_days]
 
         content {
           days = expiration.value
@@ -102,7 +101,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
       }
 
       dynamic "abort_incomplete_multipart_upload" {
-        for_each = try(rule.value.abort_incomplete_multipart_upload_days, null) == null ? [] : [rule.value.abort_incomplete_multipart_upload_days]
+        for_each = rule.value.abort_incomplete_multipart_upload_days == null ? [] : [rule.value.abort_incomplete_multipart_upload_days]
 
         content {
           days_after_initiation = abort_incomplete_multipart_upload.value
@@ -110,7 +109,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
       }
 
       dynamic "transition" {
-        for_each = try(rule.value.transitions, [])
+        for_each = rule.value.transitions
 
         content {
           days          = transition.value.days
@@ -119,7 +118,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
       }
 
       dynamic "noncurrent_version_transition" {
-        for_each = try(rule.value.noncurrent_transitions, [])
+        for_each = rule.value.noncurrent_transitions
 
         content {
           noncurrent_days = noncurrent_version_transition.value.noncurrent_days
@@ -128,7 +127,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
       }
 
       dynamic "noncurrent_version_expiration" {
-        for_each = try(rule.value.noncurrent_expiration_days, null) == null ? [] : [rule.value.noncurrent_expiration_days]
+        for_each = rule.value.noncurrent_expiration_days == null ? [] : [rule.value.noncurrent_expiration_days]
 
         content {
           noncurrent_days = noncurrent_version_expiration.value

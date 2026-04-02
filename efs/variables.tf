@@ -115,6 +115,16 @@ variable "access_points" {
     ])
     error_message = "Each access point root_directory.path must start with /."
   }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.access_points :
+      v.root_directory == null ||
+      v.root_directory.creation_info == null ||
+      can(regex("^[0-7]{3,4}$", v.root_directory.creation_info.permissions))
+    ])
+    error_message = "Each access point creation_info.permissions must be a valid octal string like 755 or 0755."
+  }
 }
 
 variable "tags" {

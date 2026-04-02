@@ -42,12 +42,6 @@ variable "associate_public_ip" {
   default     = false
 }
 
-variable "availability_zone" {
-  description = "Optional availability zone override."
-  type        = string
-  default     = null
-}
-
 variable "placement_group" {
   description = "Optional placement group name."
   type        = string
