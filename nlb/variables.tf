@@ -167,6 +167,16 @@ variable "access_logs" {
   }
 }
 
+variable "timeouts" {
+  description = "NLB resource timeouts."
+  type = object({
+    create = optional(string, "20m")
+    update = optional(string, "20m")
+    delete = optional(string, "20m")
+  })
+  default = {}
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

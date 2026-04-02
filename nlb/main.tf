@@ -33,9 +33,9 @@ resource "aws_lb" "this" {
   }
 
   timeouts {
-    create = "20m"
-    update = "20m"
-    delete = "20m"
+    create = var.timeouts.create
+    update = var.timeouts.update
+    delete = var.timeouts.delete
   }
 
   tags = local.tags

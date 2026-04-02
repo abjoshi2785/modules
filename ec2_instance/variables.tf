@@ -183,6 +183,10 @@ variable "root_kms_key_id" {
   description = "Optional KMS key id/arn for root volume encryption."
   type        = string
   default     = null
+  validation {
+    condition     = var.root_kms_key_id == null || can(regex("^arn:[^:]+:kms:[^:]+:[0-9]{12}:(key|alias)/.+", var.root_kms_key_id))
+    error_message = "root_kms_key_id must be null or a valid KMS key or alias ARN."
+  }
 }
 
 variable "tags" {

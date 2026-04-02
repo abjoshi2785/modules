@@ -1,9 +1,25 @@
 variable "bucket_name" {
   description = "Bucket name."
   type        = string
+
   validation {
-    condition     = length(trimspace(var.bucket_name)) > 0
-    error_message = "bucket_name must not be empty."
+    condition     = length(var.bucket_name) >= 3 && length(var.bucket_name) <= 63
+    error_message = "bucket_name must be between 3 and 63 characters."
+  }
+
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9.-]*[a-z0-9]$", var.bucket_name))
+    error_message = "bucket_name must start and end with a lowercase letter or number, and contain only lowercase letters, numbers, hyphens, and periods."
+  }
+
+  validation {
+    condition     = !can(regex("\\.\\.", var.bucket_name))
+    error_message = "bucket_name must not contain consecutive periods."
+  }
+
+  validation {
+    condition     = !can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$", var.bucket_name))
+    error_message = "bucket_name must not be formatted as an IP address."
   }
 }
 
@@ -33,12 +49,20 @@ variable "kms_key_arn" {
   description = "Optional KMS key ARN for SSE-KMS."
   type        = string
   default     = null
+  validation {
+    condition     = var.kms_key_arn == null || can(regex("^arn:[^:]+:kms:[^:]+:[0-9]{12}:(key|alias)/.+", var.kms_key_arn))
+    error_message = "kms_key_arn must be null or a valid KMS key or alias ARN."
+  }
 }
 
 variable "bucket_policy_json" {
   description = "Optional bucket policy JSON string."
   type        = string
   default     = null
+  validation {
+    condition     = var.bucket_policy_json == null || can(jsondecode(var.bucket_policy_json))
+    error_message = "bucket_policy_json must be null or a valid JSON string."
+  }
 }
 
 variable "logging" {
@@ -53,6 +77,11 @@ EOT
     target_prefix = optional(string)
   })
   default = null
+
+  validation {
+    condition     = var.logging == null || length(trimspace(var.logging.target_bucket)) > 0
+    error_message = "logging.target_bucket must be a non-empty bucket name when logging is configured."
+  }
 }
 
 variable "lifecycle_rules" {
@@ -88,11 +117,11 @@ variable "lifecycle_rules" {
   validation {
     condition = alltrue([
       for rule in var.lifecycle_rules : (
-        try(rule.expiration_days, null) != null ||
-        try(rule.noncurrent_expiration_days, null) != null ||
-        try(rule.abort_incomplete_multipart_upload_days, null) != null ||
-        length(try(rule.transitions, [])) > 0 ||
-        length(try(rule.noncurrent_transitions, [])) > 0
+        rule.expiration_days != null ||
+        rule.noncurrent_expiration_days != null ||
+        rule.abort_incomplete_multipart_upload_days != null ||
+        length(rule.transitions) > 0 ||
+        length(rule.noncurrent_transitions) > 0
       )
     ])
     error_message = "Each lifecycle rule must define at least one action."
@@ -101,20 +130,20 @@ variable "lifecycle_rules" {
   validation {
     condition = alltrue(flatten([
       for rule in var.lifecycle_rules : [
-        try(rule.expiration_days, null) == null ? true : try(rule.expiration_days > 0, false),
-        try(rule.noncurrent_expiration_days, null) == null ? true : try(rule.noncurrent_expiration_days > 0, false),
-        try(rule.abort_incomplete_multipart_upload_days, null) == null ? true : try(rule.abort_incomplete_multipart_upload_days > 0, false),
-        try(rule.object_size_greater_than, null) == null ? true : try(rule.object_size_greater_than >= 0, false),
-        try(rule.object_size_less_than, null) == null ? true : try(rule.object_size_less_than > 0, false),
+        rule.expiration_days == null ? true : rule.expiration_days > 0,
+        rule.noncurrent_expiration_days == null ? true : rule.noncurrent_expiration_days > 0,
+        rule.abort_incomplete_multipart_upload_days == null ? true : rule.abort_incomplete_multipart_upload_days > 0,
+        rule.object_size_greater_than == null ? true : rule.object_size_greater_than >= 0,
+        rule.object_size_less_than == null ? true : rule.object_size_less_than > 0,
         alltrue([
-          for t in try(rule.transitions, []) :
+          for t in rule.transitions :
           t.days > 0 && contains(
             ["STANDARD_IA", "ONEZONE_IA", "INTELLIGENT_TIERING", "GLACIER", "GLACIER_IR", "DEEP_ARCHIVE"],
             t.storage_class
           )
         ]),
         alltrue([
-          for t in try(rule.noncurrent_transitions, []) :
+          for t in rule.noncurrent_transitions :
           t.noncurrent_days > 0 && contains(
             ["STANDARD_IA", "ONEZONE_IA", "INTELLIGENT_TIERING", "GLACIER", "GLACIER_IR", "DEEP_ARCHIVE"],
             t.storage_class
@@ -129,9 +158,9 @@ variable "lifecycle_rules" {
     condition = alltrue([
       for rule in var.lifecycle_rules :
       (
-        try(rule.object_size_greater_than, null) == null ||
-        try(rule.object_size_less_than, null) == null ||
-        try(rule.object_size_less_than > rule.object_size_greater_than, false)
+        rule.object_size_greater_than == null ||
+        rule.object_size_less_than == null ||
+        rule.object_size_less_than > rule.object_size_greater_than
       )
     ])
     error_message = "When both object_size_greater_than and object_size_less_than are set, object_size_less_than must be greater than object_size_greater_than."

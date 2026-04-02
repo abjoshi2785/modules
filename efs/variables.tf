@@ -79,6 +79,44 @@ variable "provisioned_throughput_in_mibps" {
   }
 }
 
+variable "file_system_policy_json" {
+  description = "Optional EFS file system policy JSON string."
+  type        = string
+  default     = null
+  validation {
+    condition     = var.file_system_policy_json == null || can(jsondecode(var.file_system_policy_json))
+    error_message = "file_system_policy_json must be null or a valid JSON string."
+  }
+}
+
+variable "access_points" {
+  description = "Map of EFS access points to create."
+  type = map(object({
+    posix_user = optional(object({
+      uid            = number
+      gid            = number
+      secondary_gids = optional(list(number))
+    }))
+    root_directory = optional(object({
+      path = string
+      creation_info = optional(object({
+        owner_uid   = number
+        owner_gid   = number
+        permissions = string
+      }))
+    }))
+  }))
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.access_points :
+      v.root_directory == null || can(regex("^/", v.root_directory.path))
+    ])
+    error_message = "Each access point root_directory.path must start with /."
+  }
+}
+
 variable "tags" {
   description = "Tags to apply."
   type        = map(string)

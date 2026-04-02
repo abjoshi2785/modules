@@ -102,7 +102,7 @@ resource "aws_autoscaling_group" "this" {
 
   launch_template {
     id      = aws_launch_template.this.id
-    version = "$Latest"
+    version = var.launch_template_version
   }
 
   dynamic "instance_refresh" {

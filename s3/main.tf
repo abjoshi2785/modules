@@ -40,12 +40,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
     }
   }
 
-  lifecycle {
-    precondition {
-      condition     = var.kms_key_arn == null || can(regex("^arn:[^:]+:kms:[^:]+:[0-9]{12}:(key|alias)/.+", var.kms_key_arn))
-      error_message = "kms_key_arn must be null or a valid KMS key or alias ARN."
-    }
-  }
 }
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block
@@ -70,13 +64,6 @@ resource "aws_s3_bucket_logging" "this" {
   bucket        = aws_s3_bucket.this.id
   target_bucket = var.logging.target_bucket
   target_prefix = try(var.logging.target_prefix, null)
-
-  lifecycle {
-    precondition {
-      condition     = var.logging == null || length(trimspace(var.logging.target_bucket)) > 0
-      error_message = "logging.target_bucket must be a non-empty bucket name when logging is configured."
-    }
-  }
 }
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration

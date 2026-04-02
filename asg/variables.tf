@@ -71,6 +71,16 @@ variable "user_data" {
   default     = null
 }
 
+variable "launch_template_version" {
+  description = "Launch template version for the ASG. Use $Latest, $Default, or a specific version number."
+  type        = string
+  default     = "$Latest"
+  validation {
+    condition     = can(regex("^(\\$Latest|\\$Default|[0-9]+)$", var.launch_template_version))
+    error_message = "launch_template_version must be $Latest, $Default, or a numeric version."
+  }
+}
+
 variable "launch_template_update_default_version" {
   description = "Update the launch template default version when changes are made."
   type        = bool
@@ -156,6 +166,10 @@ variable "root_kms_key_id" {
   description = "Optional KMS key id/arn for root volume encryption."
   type        = string
   default     = null
+  validation {
+    condition     = var.root_kms_key_id == null || can(regex("^arn:[^:]+:kms:[^:]+:[0-9]{12}:(key|alias)/.+", var.root_kms_key_id))
+    error_message = "root_kms_key_id must be null or a valid KMS key or alias ARN."
+  }
 }
 
 variable "min_size" {
