@@ -79,7 +79,7 @@ EOT
   default = null
 
   validation {
-    condition     = var.logging == null || length(trimspace(var.logging.target_bucket)) > 0
+    condition     = var.logging != null ? length(trimspace(var.logging.target_bucket)) > 0 : true
     error_message = "logging.target_bucket must be a non-empty bucket name when logging is configured."
   }
 }
@@ -160,7 +160,7 @@ variable "lifecycle_rules" {
       (
         rule.object_size_greater_than == null ||
         rule.object_size_less_than == null ||
-        rule.object_size_less_than > rule.object_size_greater_than
+        try(rule.object_size_less_than > rule.object_size_greater_than, false)
       )
     ])
     error_message = "When both object_size_greater_than and object_size_less_than are set, object_size_less_than must be greater than object_size_greater_than."
