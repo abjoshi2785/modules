@@ -128,7 +128,7 @@ resource "aws_lb_listener" "this" {
     precondition {
       condition = (
         var.listener_protocol == "TLS" && var.certificate_arn != null
-      ) || (
+        ) || (
         var.listener_protocol != "TLS" && var.certificate_arn == null
       )
       error_message = "certificate_arn must be set when listener_protocol is TLS, and must not be set otherwise."
